@@ -14,8 +14,16 @@
 
   > button {
     min-height: 50px;
+    display: flex !important; // override MDC inline-flex quirks
+    align-items: center;
+    justify-content: flex-start;
+    overflow: hidden;
   }
 }
+
+// :host ::ng-deep .items button .mdc-button__label span {
+//   white-space: nowrap;
+// }
 
 h4 {
   text-align: center;

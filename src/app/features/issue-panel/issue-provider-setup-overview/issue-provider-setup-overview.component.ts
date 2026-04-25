@@ -9,12 +9,13 @@ import { MatDialog } from '@angular/material/dialog';
 import { CalendarContextInfoTarget } from '../../issue/providers/calendar/calendar.model';
 import { selectEnabledIssueProviders } from '../../issue/store/issue-provider.selectors';
 import { MatButton } from '@angular/material/button';
+import { MatTooltip } from '@angular/material/tooltip';
 import { PluginIssueProviderRegistryService } from '../../../plugins/issue-provider/plugin-issue-provider-registry.service';
 import { PluginService } from '../../../plugins/plugin.service';
 
 @Component({
   selector: 'issue-provider-setup-overview',
-  imports: [MatIcon, TranslateModule, MatButton],
+  imports: [MatIcon, TranslateModule, MatButton, MatTooltip],
   templateUrl: './issue-provider-setup-overview.component.html',
   styleUrl: './issue-provider-setup-overview.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
