@@ -30,7 +30,7 @@ export class CollapsibleComponent implements OnInit, OnDestroy {
   @Input() icon?: string;
 
   readonly isIconBefore = input<boolean>(false);
-  @Input() isGroup = false;
+  @HostBinding('class.is-group') @Input() isGroup = false;
 
   // TODO: Skipped for migration because:
   //  Your application code writes to the input. This prevents migration.
@@ -57,8 +57,12 @@ export class CollapsibleComponent implements OnInit, OnDestroy {
   }
 
   onHeaderKeydown(ev: KeyboardEvent): void {
+    if (!this.isGroup) {
+      return;
+    }
+
     if (ev.key === 'ArrowLeft') {
-      if (ev.shiftKey && this.isGroup) {
+      if (ev.shiftKey) {
         CollapsibleComponent.setAllGroupExpanded(false);
       } else {
         this.collapseIfExpanded();
@@ -69,11 +73,18 @@ export class CollapsibleComponent implements OnInit, OnDestroy {
     }
 
     if (ev.key === 'ArrowRight') {
-      if (ev.shiftKey && this.isGroup) {
+      if (ev.shiftKey) {
         CollapsibleComponent.setAllGroupExpanded(true);
       } else {
         this.expandIfCollapsed();
       }
+      ev.preventDefault();
+      ev.stopPropagation();
+      return;
+    }
+
+    if (ev.key === 'Enter' || ev.key === ' ') {
+      this.toggleExpand();
       ev.preventDefault();
       ev.stopPropagation();
       return;
