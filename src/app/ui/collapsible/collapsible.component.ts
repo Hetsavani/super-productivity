@@ -22,7 +22,12 @@ import { MatIcon } from '@angular/material/icon';
   imports: [MatIcon],
 })
 export class CollapsibleComponent implements OnInit, OnDestroy {
+  // TODO: _groupCollapsibles is a global registry. If a second consumer uses [isGroup]="true",
+  // all instances will silently be linked via Shift+Arrow behavior. Consider scoping this to
+  // a parent context or separating by logical group if that becomes a future requirement.
   private static _groupCollapsibles = new Set<CollapsibleComponent>();
+  private static _idCounter = 0;
+  readonly panelId = this.createPanelId();
   readonly title = input<string>();
   // TODO: Skipped for migration because:
   //  This input is used in a control flow expression (e.g. `@if` or `*ngIf`)
@@ -43,6 +48,14 @@ export class CollapsibleComponent implements OnInit, OnDestroy {
   readonly isExpandedChange = output<boolean>();
 
   private _cd = inject(ChangeDetectorRef);
+
+  private createPanelId(): string {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID();
+    }
+
+    return `collapsible-panel-${++CollapsibleComponent._idCounter}`;
+  }
 
   ngOnInit(): void {
     if (this.isGroup) {
