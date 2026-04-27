@@ -544,6 +544,42 @@ export class TaskComponent implements OnDestroy, AfterViewInit {
     setTimeout(() => this.focusSelf(), 10);
   }
 
+  handleArrowUp(): void {
+    if (this._focusGroupHeaderIfAtBoundary('prev')) {
+      return;
+    }
+    this.focusPrevious();
+  }
+
+  handleArrowDown(): void {
+    if (this._focusGroupHeaderIfAtBoundary('next')) {
+      return;
+    }
+    this.focusNext();
+  }
+
+  private _focusGroupHeaderIfAtBoundary(direction: 'prev' | 'next'): boolean {
+    const myEl = this._elementRef.nativeElement as HTMLElement;
+    const myGroup = myEl.closest('collapsible.is-group') as HTMLElement | null;
+    if (!myGroup) {
+      return false;
+    }
+    const allTasks = Array.from(document.querySelectorAll('task')) as HTMLElement[];
+    const myIdx = allTasks.indexOf(myEl);
+    const adjacent = direction === 'prev' ? allTasks[myIdx - 1] : allTasks[myIdx + 1];
+    const adjacentGroup = adjacent?.closest('collapsible.is-group') ?? null;
+    if (adjacentGroup === myGroup) {
+      return false;
+    }
+    const targetGroup = direction === 'prev' ? myGroup : adjacentGroup;
+    const header = targetGroup?.querySelector('.collapsible-header');
+    if (header instanceof HTMLElement) {
+      header.focus();
+      return true;
+    }
+    return false;
+  }
+
   handleArrowLeft(): void {
     const t = this.task();
     const hasSubTasks = t.subTasks && t.subTasks.length > 0;
