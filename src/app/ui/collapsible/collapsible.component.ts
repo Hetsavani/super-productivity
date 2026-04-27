@@ -98,12 +98,44 @@ export class CollapsibleComponent implements OnInit, OnDestroy {
       return;
     }
 
+    if (ev.key === 'ArrowDown') {
+      if (this._focusAdjacentTask('next')) {
+        ev.preventDefault();
+        ev.stopPropagation();
+      }
+      return;
+    }
+
+    if (ev.key === 'ArrowUp') {
+      if (this._focusAdjacentTask('prev')) {
+        ev.preventDefault();
+        ev.stopPropagation();
+      }
+      return;
+    }
+
     if (ev.key === 'Enter' || ev.key === ' ') {
       this.toggleExpand();
       ev.preventDefault();
       ev.stopPropagation();
       return;
     }
+  }
+
+  private _focusAdjacentTask(direction: 'next' | 'prev'): boolean {
+    const host = this._elementRef.nativeElement as HTMLElement;
+    const tasks = Array.from(document.querySelectorAll('task')) as HTMLElement[];
+    const wantedBit =
+      direction === 'next'
+        ? Node.DOCUMENT_POSITION_FOLLOWING
+        : Node.DOCUMENT_POSITION_PRECEDING;
+    const ordered = direction === 'next' ? tasks : tasks.reverse();
+    const target = ordered.find((t) => host.compareDocumentPosition(t) & wantedBit);
+    if (target) {
+      target.focus();
+      return true;
+    }
+    return false;
   }
 
   toggleExpand(): void {
