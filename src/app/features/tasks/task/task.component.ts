@@ -33,6 +33,7 @@ import { concatMap, first, tap } from 'rxjs/operators';
 import { fadeAnimation } from '../../../ui/animations/fade.ani';
 import { DoneToggleComponent } from '../../../ui/done-toggle/done-toggle.component';
 import { SwipeBlockComponent } from '../../../ui/swipe-block/swipe-block.component';
+import { CollapsibleComponent } from '../../../ui/collapsible/collapsible.component';
 import { TaskAttachmentService } from '../task-attachment/task-attachment.service';
 import { DialogEditTaskAttachmentComponent } from '../task-attachment/dialog-edit-attachment/dialog-edit-task-attachment.component';
 import { ProjectService } from '../../project/project.service';
@@ -549,11 +550,21 @@ export class TaskComponent implements OnDestroy, AfterViewInit {
 
     if (this.isSelected()) {
       this.hideDetailPanel();
-    } else if (hasSubTasks && t._hideSubTasksMode !== HideSubTasksMode.HideAll) {
-      this._taskService.toggleSubTaskMode(t.id, true, false);
-    } else {
-      this.focusPrevious();
+      return;
     }
+    if (hasSubTasks && t._hideSubTasksMode !== HideSubTasksMode.HideAll) {
+      this._taskService.toggleSubTaskMode(t.id, true, false);
+      return;
+    }
+    if (!t.parentId) {
+      const group = CollapsibleComponent.findClosestGroup(this._elementRef.nativeElement);
+      if (group?.isExpanded) {
+        group.focusHeader();
+        group.collapseIfExpanded();
+        return;
+      }
+    }
+    this.focusPrevious();
   }
 
   handleArrowRight(): void {

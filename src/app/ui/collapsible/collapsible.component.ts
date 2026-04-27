@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  ElementRef,
   HostBinding,
   Input,
   OnDestroy,
@@ -48,6 +49,7 @@ export class CollapsibleComponent implements OnInit, OnDestroy {
   readonly isExpandedChange = output<boolean>();
 
   private _cd = inject(ChangeDetectorRef);
+  private _elementRef = inject(ElementRef);
 
   private createPanelId(): string {
     if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -110,19 +112,39 @@ export class CollapsibleComponent implements OnInit, OnDestroy {
     this._cd.markForCheck();
   }
 
-  private collapseIfExpanded(): void {
+  collapseIfExpanded(): void {
     if (this.isExpanded) {
       this.toggleExpand();
     }
   }
 
-  private expandIfCollapsed(): void {
+  expandIfCollapsed(): void {
     if (!this.isExpanded) {
       this.toggleExpand();
     }
   }
 
-  private static setAllGroupExpanded(isExpanded: boolean): void {
+  focusHeader(): void {
+    const header = this._elementRef.nativeElement.querySelector('.collapsible-header');
+    if (header instanceof HTMLElement) {
+      header.focus();
+    }
+  }
+
+  static findClosestGroup(element: HTMLElement | null): CollapsibleComponent | null {
+    const host = element?.closest('collapsible.is-group') ?? null;
+    if (!host) {
+      return null;
+    }
+    for (const c of CollapsibleComponent._groupCollapsibles) {
+      if (c._elementRef.nativeElement === host) {
+        return c;
+      }
+    }
+    return null;
+  }
+
+  static setAllGroupExpanded(isExpanded: boolean): void {
     for (const collapsible of CollapsibleComponent._groupCollapsibles) {
       if (collapsible.isExpanded !== isExpanded) {
         collapsible.isExpanded = isExpanded;
