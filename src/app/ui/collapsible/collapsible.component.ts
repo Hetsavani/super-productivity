@@ -13,6 +13,13 @@ import {
 } from '@angular/core';
 import { expandAnimation } from '../animations/expand.ani';
 import { MatIcon } from '@angular/material/icon';
+import { findAdjacentFocusable } from '../../util/find-adjacent-focusable';
+
+/**
+ * CSS selector matching every element that participates in keyboard
+ * arrow-navigation across the work view: task rows and group headers.
+ */
+export const GROUP_NAV_SELECTOR = 'task, collapsible.is-group > .collapsible-header';
 
 @Component({
   selector: 'collapsible',
@@ -98,16 +105,8 @@ export class CollapsibleComponent implements OnInit, OnDestroy {
       return;
     }
 
-    if (ev.key === 'ArrowDown') {
-      if (this._focusAdjacentTask('next')) {
-        ev.preventDefault();
-        ev.stopPropagation();
-      }
-      return;
-    }
-
-    if (ev.key === 'ArrowUp') {
-      if (this._focusAdjacentTask('prev')) {
+    if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') {
+      if (this._focusAdjacent(ev, ev.key === 'ArrowDown' ? 'next' : 'prev')) {
         ev.preventDefault();
         ev.stopPropagation();
       }
@@ -122,15 +121,9 @@ export class CollapsibleComponent implements OnInit, OnDestroy {
     }
   }
 
-  private _focusAdjacentTask(direction: 'next' | 'prev'): boolean {
-    const host = this._elementRef.nativeElement as HTMLElement;
-    const tasks = Array.from(document.querySelectorAll('task')) as HTMLElement[];
-    const wantedBit =
-      direction === 'next'
-        ? Node.DOCUMENT_POSITION_FOLLOWING
-        : Node.DOCUMENT_POSITION_PRECEDING;
-    const ordered = direction === 'next' ? tasks : tasks.reverse();
-    const target = ordered.find((t) => host.compareDocumentPosition(t) & wantedBit);
+  private _focusAdjacent(ev: KeyboardEvent, direction: 'prev' | 'next'): boolean {
+    const from = ev.currentTarget as HTMLElement;
+    const target = findAdjacentFocusable(from, direction, GROUP_NAV_SELECTOR);
     if (target) {
       target.focus();
       return true;

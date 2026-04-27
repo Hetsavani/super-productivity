@@ -33,7 +33,11 @@ import { concatMap, first, tap } from 'rxjs/operators';
 import { fadeAnimation } from '../../../ui/animations/fade.ani';
 import { DoneToggleComponent } from '../../../ui/done-toggle/done-toggle.component';
 import { SwipeBlockComponent } from '../../../ui/swipe-block/swipe-block.component';
-import { CollapsibleComponent } from '../../../ui/collapsible/collapsible.component';
+import {
+  CollapsibleComponent,
+  GROUP_NAV_SELECTOR,
+} from '../../../ui/collapsible/collapsible.component';
+import { findAdjacentFocusable } from '../../../util/find-adjacent-focusable';
 import { TaskAttachmentService } from '../task-attachment/task-attachment.service';
 import { DialogEditTaskAttachmentComponent } from '../task-attachment/dialog-edit-attachment/dialog-edit-task-attachment.component';
 import { ProjectService } from '../../project/project.service';
@@ -559,22 +563,13 @@ export class TaskComponent implements OnDestroy, AfterViewInit {
   }
 
   private _focusGroupHeaderIfAtBoundary(direction: 'prev' | 'next'): boolean {
-    const myEl = this._elementRef.nativeElement as HTMLElement;
-    const myGroup = myEl.closest('collapsible.is-group') as HTMLElement | null;
-    if (!myGroup) {
-      return false;
-    }
-    const allTasks = Array.from(document.querySelectorAll('task')) as HTMLElement[];
-    const myIdx = allTasks.indexOf(myEl);
-    const adjacent = direction === 'prev' ? allTasks[myIdx - 1] : allTasks[myIdx + 1];
-    const adjacentGroup = adjacent?.closest('collapsible.is-group') ?? null;
-    if (adjacentGroup === myGroup) {
-      return false;
-    }
-    const targetGroup = direction === 'prev' ? myGroup : adjacentGroup;
-    const header = targetGroup?.querySelector('.collapsible-header');
-    if (header instanceof HTMLElement) {
-      header.focus();
+    const adjacent = findAdjacentFocusable(
+      this._elementRef.nativeElement,
+      direction,
+      GROUP_NAV_SELECTOR,
+    );
+    if (adjacent?.matches('.collapsible-header')) {
+      adjacent.focus();
       return true;
     }
     return false;
