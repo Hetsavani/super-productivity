@@ -138,12 +138,6 @@ export class DialogFlowtimeSettingsComponent {
     {
       key: 'breakRules',
       type: 'repeat',
-      // hideExpression: '!model.isBreakEnabled || model.breakMode !== "rule"',
-      // hideExpression: (model: any) =>
-      //   !model?.isBreakEnabled || model?.breakMode !== 'rule',
-      // props: {
-      //   disabled: (model: any) => model?.breakMode !== 'rule',
-      // },
       expressions: {
         hide: (field: any) =>
           !field.parent?.model?.isBreakEnabled ||
