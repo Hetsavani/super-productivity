@@ -22,6 +22,7 @@ import {
   adjustRemainingTime,
   completeFocusSession,
   completeTask,
+  endFlowtimeSession,
   focusModeLoaded,
   pauseFocusSession,
   resetCycles,
@@ -353,6 +354,11 @@ export class FocusModeMainComponent {
   }
 
   completeFocusSession(): void {
+    if (this.mode() === FocusModeMode.Flowtime) {
+      const currentTaskId = this.taskService.currentTaskId();
+      this._store.dispatch(endFlowtimeSession({ pausedTaskId: currentTaskId }));
+      return;
+    }
     this._store.dispatch(completeFocusSession({ isManual: true }));
   }
 

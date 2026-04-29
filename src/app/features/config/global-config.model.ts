@@ -114,7 +114,7 @@ export type PomodoroConfig = Readonly<{
 
 export type FlowtimeBreakRule = Readonly<{
   minDuration: number; // in milliseconds
-  maxDuration: number; // in milliseconds, or Infinity
+  maxDuration: number | null; // in milliseconds, or null for no upper bound
   breakDuration: number; // in milliseconds
 }>;
 

@@ -161,17 +161,88 @@ describe('FocusModeStrategies', () => {
         expect(strategy.initialSessionDuration).toBe(0);
       });
 
-      it('should have correct boolean properties', () => {
+      it('should return shouldStartBreakAfterSession true when isBreakEnabled is true', () => {
+        (mockGlobalConfigService.flowtimeConfig as jasmine.Spy).and.returnValue({
+          isBreakEnabled: true,
+        });
+        expect(strategy.shouldStartBreakAfterSession).toBe(true);
+      });
+
+      it('should return shouldStartBreakAfterSession false when isBreakEnabled is false or null', () => {
+        (mockGlobalConfigService.flowtimeConfig as jasmine.Spy).and.returnValue({
+          isBreakEnabled: false,
+        });
         expect(strategy.shouldStartBreakAfterSession).toBe(false);
+
+        (mockGlobalConfigService.flowtimeConfig as jasmine.Spy).and.returnValue(null);
+        expect(strategy.shouldStartBreakAfterSession).toBe(false);
+      });
+
+      it('should have correct shouldAutoStartNextSession', () => {
         expect(strategy.shouldAutoStartNextSession).toBe(false);
       });
     });
 
     describe('getBreakDuration', () => {
-      it('should always return null', () => {
-        const result1 = strategy.getBreakDuration(0);
+      it('should return null when breaks are disabled', () => {
+        (mockGlobalConfigService.flowtimeConfig as jasmine.Spy).and.returnValue({
+          isBreakEnabled: false,
+        });
+        expect(strategy.getBreakDuration(1000)).toBeNull();
+      });
 
-        expect(result1).toBeNull();
+      it('should calculate ratio-based break correctly', () => {
+        (mockGlobalConfigService.flowtimeConfig as jasmine.Spy).and.returnValue({
+          isBreakEnabled: true,
+          breakMode: 'ratio',
+          breakPercentage: 20,
+        });
+        expect(strategy.getBreakDuration(100000)).toEqual({
+          duration: 20000,
+          isLong: false,
+        });
+      });
+
+      it('should calculate rule-based break correctly', () => {
+        (mockGlobalConfigService.flowtimeConfig as jasmine.Spy).and.returnValue({
+          isBreakEnabled: true,
+          breakMode: 'rule',
+          breakRules: [
+            { minDuration: 0, maxDuration: 60000, breakDuration: 5000 },
+            { minDuration: 60000, maxDuration: 120000, breakDuration: 10000 },
+            { minDuration: 120000, maxDuration: null, breakDuration: 15000 },
+          ],
+        });
+        expect(strategy.getBreakDuration(30000)).toEqual({
+          duration: 5000,
+          isLong: false,
+        });
+        expect(strategy.getBreakDuration(90000)).toEqual({
+          duration: 10000,
+          isLong: false,
+        });
+        expect(strategy.getBreakDuration(150000)).toEqual({
+          duration: 15000,
+          isLong: false,
+        });
+      });
+
+      it('should return null when no rule matches', () => {
+        (mockGlobalConfigService.flowtimeConfig as jasmine.Spy).and.returnValue({
+          isBreakEnabled: true,
+          breakMode: 'rule',
+          breakRules: [{ minDuration: 0, maxDuration: 60000, breakDuration: 5000 }],
+        });
+        expect(strategy.getBreakDuration(90000)).toBeNull();
+      });
+
+      it('should return null when rules array is empty', () => {
+        (mockGlobalConfigService.flowtimeConfig as jasmine.Spy).and.returnValue({
+          isBreakEnabled: true,
+          breakMode: 'rule',
+          breakRules: [],
+        });
+        expect(strategy.getBreakDuration(90000)).toBeNull();
       });
     });
 

@@ -41,6 +41,11 @@ export const completeFocusSession = createAction(
 );
 export const cancelFocusSession = createAction('[FocusMode] Cancel Session');
 
+export const endFlowtimeSession = createAction(
+  '[FocusMode] End Flowtime Session',
+  props<{ pausedTaskId?: string | null }>(),
+);
+
 export const startBreak = createAction(
   '[FocusMode] Start Break',
   props<{ duration?: number; isLongBreak?: boolean; pausedTaskId?: string | null }>(),

@@ -441,18 +441,17 @@ export class FocusModeEffects {
     ),
   );
 
-  // Effect 3b: Offer Flowtime breaks when session is paused
-  // For Flowtime: show break offer when user pauses, allowing them to start or skip
-  offerFlowtimeBreakOnSessionPause$ = createEffect(() =>
+  // Effect 3b: Offer Flowtime breaks when user explicitly ends their session
+  // Triggers on endFlowtimeSession — NOT pauseFocusSession (which is fired by
+  // sync-stop, idle, and the regular pause button)
+  offerFlowtimeBreakOnSessionEnd$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(actions.pauseFocusSession),
+      ofType(actions.endFlowtimeSession),
       withLatestFrom(
         this.store.select(selectors.selectMode),
         this.store.select(selectors.selectTimer),
-        this.store.select(selectFocusModeConfig),
-        this.taskService.currentTaskId$,
       ),
-      filter(([action, mode, timer, _config, _currentTaskId]) => {
+      filter(([_action, mode, timer]) => {
         if (mode !== FocusModeMode.Flowtime) return false;
         if (timer.purpose !== 'work') return false;
         const strategy = this.strategyFactory.getStrategy(mode);

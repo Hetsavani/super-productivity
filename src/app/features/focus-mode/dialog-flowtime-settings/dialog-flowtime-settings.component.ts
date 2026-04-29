@@ -2,13 +2,12 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  effect,
   inject,
   signal,
 } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatDialogRef, MatDialogTitle, MatDialogContent } from '@angular/material/dialog';
-import { FormlyModule } from '@ngx-formly/core';
+import { FormlyFieldConfig, FormlyModule } from '@ngx-formly/core';
 import { GlobalConfigService } from '../../config/global-config.service';
 import { T } from '../../../t.const';
 import { FlowtimeConfig } from '../../config/global-config.model';
@@ -20,6 +19,25 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { CommonModule } from '@angular/common';
+
+/** Break-rule shape used inside the form (values in minutes, not ms). */
+interface FlowtimeBreakRuleInMinutes {
+  minDuration: number;
+  maxDuration: number | null;
+  breakDuration: number;
+}
+
+/**
+ * View-model for the flowtime settings form.
+ * Mirrors {@link FlowtimeConfig} but break-rule durations are in **minutes**
+ * (the saved config stores milliseconds).
+ */
+interface FlowtimeFormModel {
+  isBreakEnabled?: boolean | null;
+  breakMode?: 'ratio' | 'rule' | null;
+  breakPercentage?: number | null;
+  breakRules?: FlowtimeBreakRuleInMinutes[];
+}
 
 @Component({
   selector: 'dialog-flowtime-settings',
@@ -85,7 +103,7 @@ import { CommonModule } from '@angular/common';
 export class DialogFlowtimeSettingsComponent {
   private readonly _dialogRef = inject(MatDialogRef<DialogFlowtimeSettingsComponent>);
   private readonly _globalConfigService = inject(GlobalConfigService);
-  private readonly _defaultRuleInMinutes = {
+  private readonly _defaultRuleInMinutes: FlowtimeBreakRuleInMinutes = {
     minDuration: 0,
     maxDuration: 25,
     breakDuration: 5,
@@ -93,7 +111,7 @@ export class DialogFlowtimeSettingsComponent {
 
   T = T;
   form = new FormGroup({});
-  model = signal<any>({});
+  model = signal<FlowtimeFormModel>({});
 
   readonly fields = computed(() => [
     {
@@ -106,7 +124,7 @@ export class DialogFlowtimeSettingsComponent {
     {
       key: 'breakMode',
       type: 'select',
-      hideExpression: (model: any) => !model?.isBreakEnabled,
+      hideExpression: (model: FlowtimeFormModel) => !model?.isBreakEnabled,
       props: {
         label: T.F.FOCUS_MODE.FLOWTIME_BREAK_MODE,
         options: [
@@ -124,8 +142,11 @@ export class DialogFlowtimeSettingsComponent {
     {
       key: 'breakPercentage',
       type: 'input',
-      hideExpression: (model: any) =>
-        !model?.isBreakEnabled || model?.breakMode !== 'ratio',
+      expressions: {
+        hide: (field: FormlyFieldConfig) =>
+          !field.parent?.model?.isBreakEnabled ||
+          field.parent?.model?.breakMode !== 'ratio',
+      },
       props: {
         label: T.F.FOCUS_MODE.FLOWTIME_BREAK_PERCENTAGE,
         type: 'number',
@@ -139,13 +160,12 @@ export class DialogFlowtimeSettingsComponent {
       key: 'breakRules',
       type: 'repeat',
       expressions: {
-        hide: (field: any) =>
+        hide: (field: FormlyFieldConfig) =>
           !field.parent?.model?.isBreakEnabled ||
           field.parent?.model?.breakMode !== 'rule',
       },
-      templateOptions: {
-        addText: T.F.FOCUS_MODE.FLOWTIME_BREAK_RULES_TITLE,
-        // addText: T.F.FOCUS_MODE.FLOWTIME_ADD_BREAK_RULE,
+      props: {
+        addText: T.F.FOCUS_MODE.FLOWTIME_ADD_BREAK_RULE,
         defaultValue: {
           minDuration: 0,
           maxDuration: 25,
@@ -200,7 +220,8 @@ export class DialogFlowtimeSettingsComponent {
 
     const breakRulesInMinutes = (flowtime.breakRules ?? []).map((rule) => ({
       minDuration: Math.round(rule.minDuration / 60000),
-      maxDuration: Math.round(rule.maxDuration / 60000),
+      maxDuration:
+        rule.maxDuration === null ? null : Math.round(rule.maxDuration / 60000),
       breakDuration: Math.round(rule.breakDuration / 60000),
     }));
 
@@ -211,11 +232,6 @@ export class DialogFlowtimeSettingsComponent {
           ? breakRulesInMinutes
           : [{ ...this._defaultRuleInMinutes }],
     });
-
-    effect(() => {
-      console.log('Flowtime Model:', this.model());
-      console.log('Break Mode:', this.model().breakMode);
-    });
   }
 
   save(): void {
@@ -225,13 +241,32 @@ export class DialogFlowtimeSettingsComponent {
     }
 
     const currentModel = this.model();
+    // Sort rules by minDuration
+    const sortedRules = [...(currentModel.breakRules ?? [])].sort(
+      (a, b) => (a.minDuration ?? 0) - (b.minDuration ?? 0),
+    );
+
+    // Ensure max >= min for each rule (if max is not null)
+    for (const rule of sortedRules) {
+      if (
+        rule.maxDuration !== null &&
+        rule.maxDuration !== undefined &&
+        rule.maxDuration < (rule.minDuration ?? 0)
+      ) {
+        rule.maxDuration = rule.minDuration ?? 0;
+      }
+    }
+
     const flowtimeConfig: FlowtimeConfig = {
       isBreakEnabled: currentModel.isBreakEnabled,
       breakMode: currentModel.breakMode,
       breakPercentage: currentModel.breakPercentage,
-      breakRules: (currentModel.breakRules ?? []).map((rule: any) => ({
+      breakRules: sortedRules.map((rule: FlowtimeBreakRuleInMinutes) => ({
         minDuration: Math.round((rule.minDuration ?? 0) * 60000),
-        maxDuration: Math.round((rule.maxDuration ?? 0) * 60000),
+        maxDuration:
+          rule.maxDuration === null || rule.maxDuration === undefined
+            ? null
+            : Math.round(rule.maxDuration * 60000),
         breakDuration: Math.round((rule.breakDuration ?? 0) * 60000),
       })),
     };

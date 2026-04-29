@@ -76,14 +76,22 @@ export class FlowtimeStrategy implements FocusModeStrategy {
     if (config.breakMode === 'ratio' && config.breakPercentage) {
       // Ratio-based: breakDuration = elapsedTime * (percentage / 100)
       breakDuration = Math.round(elapsedMs * (config.breakPercentage / 100));
-    } else if (config.breakMode === 'rule' && config.breakRules?.length) {
+    } else if (config.breakMode === 'rule') {
+      if (!config.breakRules?.length) {
+        return null;
+      }
       // Rule-based: find matching rule
       const matchingRule = config.breakRules.find(
-        (rule) => elapsedMs >= rule.minDuration && elapsedMs < rule.maxDuration,
+        (rule) =>
+          elapsedMs >= rule.minDuration &&
+          (rule.maxDuration === null || elapsedMs < rule.maxDuration),
       );
-      if (matchingRule) {
-        breakDuration = matchingRule.breakDuration;
+      if (!matchingRule) {
+        return null;
       }
+      breakDuration = matchingRule.breakDuration;
+    } else {
+      return null;
     }
 
     return { duration: breakDuration, isLong: false };

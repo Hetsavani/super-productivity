@@ -183,6 +183,19 @@ export const focusModeReducer = createReducer(
     _isOvertimeEnabled: false,
   })),
 
+  // Flowtime end-of-session: store elapsed duration, pause the timer, but DON'T
+  // reset the screen — the offerFlowtimeBreak effect reads timer.elapsed and
+  // dispatches offerFlowtimeBreak which transitions to the Break screen.
+  on(a.endFlowtimeSession, (state, { pausedTaskId }) => {
+    if (state.timer.purpose !== 'work') return state;
+    return {
+      ...state,
+      timer: { ...state.timer, isRunning: false },
+      lastCompletedDuration: state.timer.elapsed,
+      pausedTaskId: pausedTaskId ?? state.pausedTaskId,
+    };
+  }),
+
   on(a.setOvertimeEnabled, (state, { enabled }) => ({
     ...state,
     _isOvertimeEnabled: enabled,
