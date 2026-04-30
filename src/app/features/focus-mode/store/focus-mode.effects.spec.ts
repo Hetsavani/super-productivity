@@ -654,6 +654,72 @@ describe('FocusModeEffects', () => {
       });
     });
 
+    describe('offerFlowtimeBreakOnSessionEnd$', () => {
+      it('should dispatch offerFlowtimeBreak when mode is Flowtime, timer is work, and breakInfo is present', (done) => {
+        actions$ = of(actions.endFlowtimeSession({ pausedTaskId: 'task-123' }));
+        store.overrideSelector(selectors.selectMode, FocusModeMode.Flowtime);
+        store.overrideSelector(
+          selectors.selectTimer,
+          createMockTimer({ purpose: 'work', elapsed: 1500000 }),
+        );
+        store.refreshState();
+
+        strategyFactoryMock.getStrategy.and.returnValue({
+          shouldStartBreakAfterSession: true,
+          getBreakDuration: () => ({ duration: 300000, isLong: false }),
+        });
+
+        effects.offerFlowtimeBreakOnSessionEnd$.pipe(take(1)).subscribe((action) => {
+          expect(action).toEqual(
+            actions.offerFlowtimeBreak({
+              elapsedMs: 1500000,
+              duration: 300000,
+              isLongBreak: false,
+              pausedTaskId: 'task-123',
+            }),
+          );
+          done();
+        });
+      });
+
+      it('should dispatch completeFocusSession when mode is Flowtime, timer is work, but breakInfo is null', (done) => {
+        actions$ = of(actions.endFlowtimeSession({ pausedTaskId: 'task-123' }));
+        store.overrideSelector(selectors.selectMode, FocusModeMode.Flowtime);
+        store.overrideSelector(
+          selectors.selectTimer,
+          createMockTimer({ purpose: 'work', elapsed: 1500000 }),
+        );
+        store.refreshState();
+
+        strategyFactoryMock.getStrategy.and.returnValue({
+          shouldStartBreakAfterSession: true,
+          getBreakDuration: () => null,
+        });
+
+        effects.offerFlowtimeBreakOnSessionEnd$.pipe(take(1)).subscribe((action) => {
+          expect(action).toEqual(actions.completeFocusSession({ isManual: true }));
+          done();
+        });
+      });
+
+      it('should skip effect if mode is not Flowtime', (done) => {
+        actions$ = of(actions.endFlowtimeSession({ pausedTaskId: 'task-123' }));
+        store.overrideSelector(selectors.selectMode, FocusModeMode.Pomodoro);
+        store.overrideSelector(
+          selectors.selectTimer,
+          createMockTimer({ purpose: 'work', elapsed: 1500000 }),
+        );
+        store.refreshState();
+
+        effects.offerFlowtimeBreakOnSessionEnd$
+          .pipe(toArray())
+          .subscribe((actionsArr) => {
+            expect(actionsArr.length).toBe(0);
+            done();
+          });
+      });
+    });
+
     describe('edge cases', () => {
       it('should handle missing focusModeConfig gracefully in incrementCycleOnSessionComplete$', (done) => {
         actions$ = of(actions.completeFocusSession({ isManual: true }));

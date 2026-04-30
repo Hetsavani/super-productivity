@@ -282,7 +282,6 @@
       "FLOWTIME_BREAK_MODE_RULE": "Rule-based",
       "FLOWTIME_BREAK_PERCENTAGE": "Break percentage",
       "FLOWTIME_BREAK_PERCENTAGE_DESC": "Take a break for this percentage of the work session length.",
-      "FLOWTIME_BREAK_RULES_TITLE": "Break rules",
       "FLOWTIME_ADD_BREAK_RULE": "Add break rule",
       "FLOWTIME_BREAK_RULE_MIN": "Min work duration (minutes)",
       "FLOWTIME_BREAK_RULE_MAX": "Max work duration (minutes)",

@@ -73,7 +73,10 @@ export class FlowtimeStrategy implements FocusModeStrategy {
 
     let breakDuration = FOCUS_MODE_DEFAULTS.SHORT_BREAK_DURATION;
 
-    if (config.breakMode === 'ratio' && config.breakPercentage) {
+    if (config.breakMode === 'ratio' && typeof config.breakPercentage === 'number') {
+      if (config.breakPercentage <= 0) {
+        return null;
+      }
       // Ratio-based: breakDuration = elapsedTime * (percentage / 100)
       breakDuration = Math.round(elapsedMs * (config.breakPercentage / 100));
     } else if (config.breakMode === 'rule') {

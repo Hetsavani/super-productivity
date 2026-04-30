@@ -191,7 +191,6 @@ export const focusModeReducer = createReducer(
     return {
       ...state,
       timer: { ...state.timer, isRunning: false },
-      lastCompletedDuration: state.timer.elapsed,
       pausedTaskId: pausedTaskId ?? state.pausedTaskId,
     };
   }),
@@ -235,6 +234,9 @@ export const focusModeReducer = createReducer(
   })),
 
   // Flowtime break offer - show break screen but don't start timer yet
+  // Contract: currentScreen = Break AND mainState = Preparation
+  // is semantically treated as the "Break Offer" state by the break UI.
+  // This allows the user to click "Start Break" to transition mainState to InProgress.
   on(a.offerFlowtimeBreak, (state, { duration, isLongBreak, pausedTaskId }) => {
     const breakTimer: TimerState = {
       isRunning: false,

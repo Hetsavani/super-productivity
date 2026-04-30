@@ -56,48 +56,8 @@ interface FlowtimeFormModel {
     MatSelectModule,
     MatIconModule,
   ],
-  template: `
-    <h2 mat-dialog-title>{{ T.F.FOCUS_MODE.FLOWTIME_SETTINGS | translate }}</h2>
-    <mat-dialog-content>
-      <form [formGroup]="form">
-        <formly-form
-          [fields]="fields()"
-          [form]="form"
-          [model]="model()"
-          (modelChange)="model.set($event)"
-        ></formly-form>
-      </form>
-      <div class="dialog-actions">
-        <span class="spacer"></span>
-        <button
-          mat-button
-          (click)="close()"
-        >
-          {{ T.G.CANCEL | translate }}
-        </button>
-        <button
-          mat-button
-          color="primary"
-          (click)="save()"
-        >
-          {{ T.G.SAVE | translate }}
-        </button>
-      </div>
-    </mat-dialog-content>
-  `,
-  styles: [
-    `
-      .dialog-actions {
-        display: flex;
-        gap: 8px;
-        margin-top: 16px;
-      }
-
-      .spacer {
-        flex: 1;
-      }
-    `,
-  ],
+  templateUrl: './dialog-flowtime-settings.component.html',
+  styleUrls: ['./dialog-flowtime-settings.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DialogFlowtimeSettingsComponent {
@@ -124,7 +84,9 @@ export class DialogFlowtimeSettingsComponent {
     {
       key: 'breakMode',
       type: 'select',
-      hideExpression: (model: FlowtimeFormModel) => !model?.isBreakEnabled,
+      expressions: {
+        hide: (field: FormlyFieldConfig) => !field.parent?.model?.isBreakEnabled,
+      },
       props: {
         label: T.F.FOCUS_MODE.FLOWTIME_BREAK_MODE,
         options: [
@@ -172,7 +134,32 @@ export class DialogFlowtimeSettingsComponent {
           breakDuration: 5,
         },
       },
+      validators: {
+        validation: [
+          {
+            name: 'minMaxDuration',
+            options: {
+              errorPath: 'maxDuration',
+            },
+          },
+        ],
+      },
       fieldArray: {
+        validators: {
+          minMaxDuration: {
+            expression: (control: any) => {
+              if (
+                !control.value ||
+                control.value.maxDuration === null ||
+                control.value.maxDuration === undefined
+              ) {
+                return true;
+              }
+              return control.value.minDuration <= control.value.maxDuration;
+            },
+            message: () => 'Max duration must be greater than or equal to Min duration',
+          },
+        },
         fieldGroup: [
           {
             key: 'minDuration',

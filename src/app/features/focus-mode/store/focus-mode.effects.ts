@@ -34,7 +34,6 @@ import {
   selectPomodoroConfig,
 } from '../../config/store/global-config.reducer';
 import { FocusModeConfig } from '../../config/global-config.model';
-import { FOCUS_MODE_DEFAULTS } from '../focus-mode.model';
 import { updateGlobalConfigSection } from '../../config/store/global-config.actions';
 import {
   FocusModeMode,
@@ -454,17 +453,20 @@ export class FocusModeEffects {
       filter(([_action, mode, timer]) => {
         if (mode !== FocusModeMode.Flowtime) return false;
         if (timer.purpose !== 'work') return false;
-        const strategy = this.strategyFactory.getStrategy(mode);
-        return strategy.shouldStartBreakAfterSession;
+        return true;
       }),
       map(([action, mode, timer]) => {
         const strategy = this.strategyFactory.getStrategy(mode);
         const breakInfo = strategy.getBreakDuration(timer.elapsed);
 
+        if (!strategy.shouldStartBreakAfterSession || !breakInfo) {
+          return actions.completeFocusSession({ isManual: true });
+        }
+
         return actions.offerFlowtimeBreak({
           elapsedMs: timer.elapsed,
-          duration: breakInfo?.duration ?? FOCUS_MODE_DEFAULTS.SHORT_BREAK_DURATION,
-          isLongBreak: breakInfo?.isLong ?? false,
+          duration: breakInfo.duration,
+          isLongBreak: breakInfo.isLong,
           pausedTaskId: action.pausedTaskId,
         });
       }),

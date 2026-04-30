@@ -355,6 +355,9 @@ export class FocusModeMainComponent {
 
   completeFocusSession(): void {
     if (this.mode() === FocusModeMode.Flowtime) {
+      // Flowtime uses a dedicated action because the end of a session must
+      // trigger a break offer effect based on elapsed time, rather than
+      // immediately resetting the timer and UI state
       const currentTaskId = this.taskService.currentTaskId();
       this._store.dispatch(endFlowtimeSession({ pausedTaskId: currentTaskId }));
       return;
