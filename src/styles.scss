@@ -56,10 +56,6 @@ body.isNativeMobile {
   }
 }
 
-.mat-expansion-panel-header {
-  --mat-expansion-header-expanded-state-height: 48px;
-}
-
 // iOS-specific adjustments
 body.isIOS {
   // Prevent overscroll bounce effect
