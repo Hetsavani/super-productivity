@@ -76,10 +76,6 @@ progress-bar {
   }
 }
 
-:host ::ng-deep .notes-panel .mat-expansion-panel-header {
-  --mat-expansion-header-expanded-state-height: 48px;
-}
-
 .created,
 .date-info {
   padding: var(--s);
