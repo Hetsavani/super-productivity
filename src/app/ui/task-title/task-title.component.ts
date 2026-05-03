@@ -40,6 +40,7 @@ import { hasLinkHints, RenderLinksPipe } from '../pipes/render-links.pipe';
   },
 })
 export class TaskTitleComponent implements OnDestroy {
+  private static readonly _DEFAULT_SUBMIT_TRIGGER = 'blur' as const;
   T: typeof T = T;
 
   // short-syntax autocomplete config shared across all editor instances
@@ -90,11 +91,14 @@ export class TaskTitleComponent implements OnDestroy {
     newVal: string;
     wasChanged: boolean;
     blurEvent?: FocusEvent;
+    submitTrigger: 'blur' | 'escape' | 'enter' | 'modEnter';
   }>();
 
   private readonly _isFocused = signal(false);
   private readonly _isEditing = signal(false);
   private _focusTimeoutId: number | undefined;
+  private _submitTrigger: 'blur' | 'escape' | 'enter' | 'modEnter' =
+    TaskTitleComponent._DEFAULT_SUBMIT_TRIGGER;
 
   updateMentionListShown(isShown: boolean): void {
     // use setTimeout to ensure blur event order doesn't interfere with mention selection
@@ -187,11 +191,20 @@ export class TaskTitleComponent implements OnDestroy {
     if (ev.key === 'Escape') {
       // if mention list is open, Escape is handled by MentionDirective - don't blur
       if (!this._isMentionListShown()) {
+        this._submitTrigger = 'escape';
         this._forceBlur();
+        ev.preventDefault();
+      }
+    } else if (ev.key === 'Enter' && (ev.ctrlKey || ev.metaKey)) {
+      if (!this._isMentionListShown()) {
+        this._submitTrigger = 'modEnter';
+        this._forceBlur();
+        ev.preventDefault();
       }
     } else if (ev.key === 'Enter') {
       // if mention list is open, Enter selects from list - don't blur
       if (!this._isMentionListShown()) {
+        this._submitTrigger = 'enter';
         this._forceBlur();
         ev.preventDefault();
       }
@@ -265,12 +278,15 @@ export class TaskTitleComponent implements OnDestroy {
   private _submit(blurEvent?: FocusEvent): void {
     const previousValue = this.lastExternalValue;
     const cleanVal = this._cleanValue(this.tmpValue());
+    const submitTrigger = this._submitTrigger;
     this.tmpValue.set(cleanVal);
     this.lastExternalValue = cleanVal;
+    this._submitTrigger = TaskTitleComponent._DEFAULT_SUBMIT_TRIGGER;
     this.valueEdited.emit({
       newVal: cleanVal,
       wasChanged: cleanVal !== previousValue,
       blurEvent,
+      submitTrigger,
     });
   }
 

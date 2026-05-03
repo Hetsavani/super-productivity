@@ -688,13 +688,31 @@ export class TaskComponent implements OnDestroy, AfterViewInit {
     newVal,
     wasChanged,
     blurEvent,
+    submitTrigger,
   }: {
     newVal: string;
     wasChanged: boolean;
     blurEvent?: FocusEvent;
+    submitTrigger: 'blur' | 'escape' | 'enter' | 'modEnter';
   }): void {
     if (wasChanged) {
       this._taskService.update(this.task().id, { title: newVal });
+    }
+
+    if (submitTrigger === 'modEnter') {
+      this.addSubTask();
+      return;
+    }
+
+    // Escape in subtask editor should return focus to previous sibling;
+    // for empty titles we remove the subtask entirely.
+    if (submitTrigger === 'escape' && this.task().parentId) {
+      const previousTaskEl = this._getPreviousTaskEl();
+      if (!newVal) {
+        this._taskService.remove(this.task());
+      }
+      this._focusTaskHost(previousTaskEl);
+      return;
     }
 
     // Only focus self if no input/textarea is receiving focus next
@@ -1163,6 +1181,22 @@ export class TaskComponent implements OnDestroy, AfterViewInit {
         })()
       : (taskEls[currentIndex + 1] as HTMLElement);
     return nextEl;
+  }
+
+  private _getPreviousTaskEl(): HTMLElement | undefined {
+    const taskEls = Array.from(document.querySelectorAll('task'));
+    const currentIndex = taskEls.findIndex((el) => el === this._elementRef.nativeElement);
+    return taskEls[currentIndex - 1] as HTMLElement | undefined;
+  }
+
+  private _focusTaskHost(taskEl?: HTMLElement): void {
+    if (!taskEl || isTouchActive()) {
+      return;
+    }
+    // Defer to next tick so focus survives blur/delete related DOM updates.
+    window.setTimeout(() => {
+      taskEl.focus();
+    });
   }
 
   get kb(): KeyboardConfig {
